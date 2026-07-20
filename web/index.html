@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서재의 방 — 탈출</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14100D;
+    --panel: #1C1610;
+    --panel-edge: #2A2117;
+    --ink: #D9CBAA;
+    --ink-dim: #8B7F68;
+    --brass: #C9973B;
+    --brass-dim: #8A6A2C;
+    --danger: #7A2E2E;
+    --success: #5C7A4A;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'EB Garamond', serif;
+    overflow: hidden;
+  }
+
+  /* 은은한 촛불 비네트 — 시그니처 분위기 연출용, 상호작용 없음 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(201,151,59,0.08), transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.7), transparent 50%);
+    z-index: 5;
+    animation: flicker 6s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 0.92; }
+    50% { opacity: 1; }
+    72% { opacity: 0.96; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+  }
+
+  .stage {
+    position: relative;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 1px;
+    background: var(--panel-edge);
+  }
+
+  header.title-bar {
+    grid-column: 1 / -1;
+    padding: 1.1rem 1.6rem 0.9rem;
+    background: var(--bg);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--panel-edge);
+  }
+  header.title-bar h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 1.7rem;
+    letter-spacing: 0.04em;
+    margin: 0;
+    color: var(--brass);
+  }
+  header.title-bar .room-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* ---------- 왼쪽: 방 뷰 ---------- */
+  .room-view {
+    background: var(--bg);
+    padding: 2rem 2.4rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .room-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    color: var(--brass-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .room-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: 2.4rem;
+    margin: 0 0 1rem;
+    color: var(--ink);
+  }
+  .room-desc {
+    font-size: 1.15rem;
+    line-height: 1.75;
+    color: var(--ink);
+    max-width: 46ch;
+    font-style: italic;
+    color: #C4B692;
+  }
+
+  .actions {
+    margin-top: auto;
+    padding-top: 1.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  button.action-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--panel-edge);
+    padding: 0.65rem 1.1rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  button.action-btn:hover,
+  button.action-btn:focus-visible {
+    border-color: var(--brass);
+    color: var(--brass);
+    outline: none;
+  }
+  button.action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* ---------- 오른쪽: 사이드바 ---------- */
+  .sidebar {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .lock-signature {
+    padding: 1.3rem 1.6rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    border-bottom: 1px solid var(--panel-edge);
+  }
+  .lock-signature svg {
+    width: 34px;
+    height: 34px;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: 70% 40%;
+  }
+  .lock-signature.open svg {
+    transform: rotate(28deg) translateY(-2px);
+  }
+  .lock-signature svg .shackle { transition: stroke 0.4s ease, opacity 0.4s ease; }
+  .lock-signature.open svg .shackle { opacity: 0; }
+  .lock-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .lock-signature.open .lock-status { color: var(--success); }
+
+  .inventory {
+    padding: 1.1rem 1.6rem;
+    border-bottom: 1px solid var(--panel-edge);
+  }
+  .inventory h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 0.7rem;
+  }
+  .item-list {
+    display: flex;
+    gap: 0.6rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    min-height: 2.4rem;
+  }
+  .item-list li {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-dim);
+    border: 1px solid var(--panel-edge);
+    padding: 0.35rem 0.6rem;
+  }
+  .item-list li.held {
+    color: var(--brass);
+    border-color: var(--brass-dim);
+  }
+  .item-list .empty {
+    color: var(--ink-dim);
+    font-style: italic;
+    border: none;
+    padding: 0.35rem 0;
+  }
+
+  .log {
+    flex: 1;
+    padding: 1.1rem 1.6rem 0.4rem;
+    overflow-y: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    min-height: 0;
+  }
+  .log h2 {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 0.6rem;
+  }
+  .log-line { margin: 0 0 0.35rem; color: var(--ink-dim); }
+  .log-line.system { color: var(--ink); }
+  .log-line.success { color: var(--success); }
+  .log-line.error { color: var(--danger); }
+
+  .lock-input-row {
+    padding: 0.9rem 1.6rem 1.4rem;
+    border-top: 1px solid var(--panel-edge);
+    display: flex;
+    gap: 0.5rem;
+  }
+  .lock-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-edge);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.7rem;
+    letter-spacing: 0.1em;
+  }
+  .lock-input-row input:focus-visible {
+    outline: none;
+    border-color: var(--brass);
+  }
+  .lock-input-row input::placeholder { color: var(--ink-dim); }
+  .lock-input-row button {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--brass-dim);
+    color: var(--bg);
+    border: none;
+    padding: 0 1.1rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+  }
+  .lock-input-row button:hover { background: var(--brass); }
+  .lock-input-row button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  @media (max-width: 760px) {
+    .stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; overflow-y: auto; }
+    .room-view { min-height: 40vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <header class="title-bar">
+    <h1>서재의 방</h1>
+    <span class="room-count" id="move-count">이동 0회</span>
+  </header>
+
+  <main class="room-view">
+    <div class="room-eyebrow" id="room-eyebrow">현재 위치</div>
+    <h2 class="room-name" id="room-name">입구</h2>
+    <p class="room-desc" id="room-desc">어두운 방. 북쪽으로 서재가 보인다.</p>
+
+    <div class="actions">
+      <button class="action-btn" id="btn-move-n">이동: 북쪽</button>
+      <button class="action-btn" id="btn-move-s">이동: 남쪽</button>
+      <button class="action-btn" id="btn-inspect">조사하기</button>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <div class="lock-signature" id="lock-signature">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="shackle" d="M7 10V7a5 5 0 0 1 10 0v3" stroke="#C9973B" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="5" y="10" width="14" height="10" rx="1.5" fill="#C9973B"/>
+        <circle cx="12" cy="14.5" r="1.4" fill="#14100D"/>
+        <rect x="11.4" y="15.3" width="1.2" height="2.4" fill="#14100D"/>
+      </svg>
+      <span class="lock-status" id="lock-status">잠김</span>
+    </div>
+
+    <div class="inventory">
+      <h2>소지품</h2>
+      <ul class="item-list" id="item-list">
+        <li class="empty">비어 있음</li>
+      </ul>
+    </div>
+
+    <div class="log" id="log">
+      <h2>기록</h2>
+      <p class="log-line system">게임을 불러왔습니다.</p>
+    </div>
+
+    <form class="lock-input-row" id="lock-form">
+      <input
+        type="text"
+        id="lock-input"
+        placeholder="자물쇠 비밀번호 입력..."
+        maxlength="8"
+        autocomplete="off"
+      >
+      <button type="submit">확인</button>
+    </form>
+  </aside>
+</div>
+
+<script>
+/*
+ * ============================================================
+ * WASM 바인딩 — game_core.js (Emscripten 빌드 산출물) 로드 필요
+ * ============================================================
+ *
+ * 중요: 이 스크립트는 이전 단계의 콘솔용 game_core.c(scanf/fgets 기반,
+ * main() 안에서 블로킹 루프)가 아니라, 웹 호출에 맞게 "함수 분리"한
+ * C API를 전제로 작성되었습니다. C 쪽에 아래 함수들을 노출해야 합니다:
+ *
+ *   void game_init(void);
+ *   int  game_move(int direction);        // 0=성공, 1=이동 불가
+ *   int  game_inspect(void);               // 0=아이템 없음, 1=획득함
+ *   int  game_try_lock(const char* code);  // 0=오답, 1=정답
+ *   int  game_get_room(void);
+ *   int  game_get_has_key(void);
+ *   int  game_get_has_code_paper(void);
+ *   int  game_get_lock_opened(void);
+ *   int  game_get_move_count(void);
+ *
+ * emcc EXPORTED_FUNCTIONS에 위 함수명을 '_' 접두사와 함께 추가하세요.
+ * 아직 이 리팩터링을 진행하지 않았다면, 다음 단계에서 game_core.c를
+ * 이 형태로 바꿔드릴 수 있습니다 — 지금은 UI/바인딩 구조에 집중했습니다.
+ * ============================================================
+ */
+
+const ROOM_NAMES = {
+  0: { name: '입구', eyebrow: '현재 위치', desc: '어두운 방. 북쪽으로 서재가 보인다.' },
+  1: { name: '서재', eyebrow: '현재 위치', desc: '책장 사이에 무언가 떨어져 있다.' },
+  2: { name: '연구실', eyebrow: '현재 위치', desc: '자물쇠가 걸린 문이 있다.' },
+  3: { name: '출구', eyebrow: '현재 위치', desc: '마지막 문 앞에 섰다.' },
+};
+
+let Module = null;
+let cGameInit, cGameMove, cGameInspect, cGameTryLock;
+let cGetRoom, cGetHasKey, cGetHasCodePaper, cGetLockOpened, cGetMoveCount;
+
+const els = {
+  roomName: document.getElementById('room-name'),
+  roomDesc: document.getElementById('room-desc'),
+  roomEyebrow: document.getElementById('room-eyebrow'),
+  moveCount: document.getElementById('move-count'),
+  itemList: document.getElementById('item-list'),
+  log: document.getElementById('log'),
+  lockSignature: document.getElementById('lock-signature'),
+  lockStatus: document.getElementById('lock-status'),
+  btnN: document.getElementById('btn-move-n'),
+  btnS: document.getElementById('btn-move-s'),
+  btnInspect: document.getElementById('btn-inspect'),
+  lockForm: document.getElementById('lock-form'),
+  lockInput: document.getElementById('lock-input'),
+};
+
+function appendLog(text, type = '') {
+  const p = document.createElement('p');
+  p.className = 'log-line' + (type ? ' ' + type : '');
+  p.textContent = text;
+  els.log.appendChild(p);
+  els.log.scrollTop = els.log.scrollHeight;
+}
+
+function renderState() {
+  const room = cGetRoom();
+  const info = ROOM_NAMES[room] ?? { name: '알 수 없음', eyebrow: '', desc: '' };
+
+  els.roomName.textContent = info.name;
+  els.roomDesc.textContent = info.desc;
+  els.roomEyebrow.textContent = info.eyebrow;
+  els.moveCount.textContent = `이동 ${cGetMoveCount()}회`;
+
+  const hasKey = cGetHasKey();
+  const hasCode = cGetHasCodePaper();
+  const items = [];
+  if (hasKey) items.push('열쇠');
+  if (hasCode) items.push('낡은 종이');
+
+  els.itemList.innerHTML = items.length
+    ? items.map(i => `<li class="held">${i}</li>`).join('')
+    : '<li class="empty">비어 있음</li>';
+
+  const lockOpened = cGetLockOpened();
+  els.lockSignature.classList.toggle('open', !!lockOpened);
+  els.lockStatus.textContent = lockOpened ? '열림' : '잠김';
+
+  const canGoExit = room === 2 && lockOpened;
+  els.btnN.disabled = room === 3;
+  els.btnS.disabled = room === 0;
+  if (room === 2) {
+    els.btnN.textContent = canGoExit ? '이동: 출구로' : '이동: 출구 (잠김)';
+    els.btnN.disabled = !canGoExit;
+  } else {
+    els.btnN.textContent = '이동: 북쪽';
+  }
+}
+
+function handleMove(direction) {
+  const result = cGameMove(direction);
+  if (result === 0) {
+    appendLog(`${direction > 0 ? '북쪽' : '남쪽'}으로 이동했습니다.`, 'system');
+  } else {
+    appendLog('그 방향으로는 갈 수 없습니다.', 'error');
+  }
+  renderState();
+  checkEnding();
+}
+
+function handleInspect() {
+  const result = cGameInspect();
+  if (result === 1) {
+    appendLog('무언가를 발견했다.', 'success');
+  } else {
+    appendLog('더 이상 조사할 것이 없다.', '');
+  }
+  renderState();
+}
+
+function handleLockSubmit(event) {
+  event.preventDefault();
+  const code = els.lockInput.value.trim();
+  if (!code) return;
+
+  const correct = cGameTryLock(code);
+  if (correct === 1) {
+    appendLog('찰칵! 자물쇠가 열렸다.', 'success');
+  } else {
+    appendLog('비밀번호가 틀렸다.', 'error');
+  }
+  els.lockInput.value = '';
+  renderState();
+}
+
+function checkEnding() {
+  if (cGetRoom() === 3 && cGetLockOpened()) {
+    appendLog(`=== 탈출 성공! 총 이동 ${cGetMoveCount()}회 ===`, 'success');
+    els.btnN.disabled = true;
+    els.btnS.disabled = true;
+    els.btnInspect.disabled = true;
+  }
+}
+
+function bindEvents() {
+  els.btnN.addEventListener('click', () => handleMove(1));
+  els.btnS.addEventListener('click', () => handleMove(-1));
+  els.btnInspect.addEventListener('click', handleInspect);
+  els.lockForm.addEventListener('submit', handleLockSubmit);
+}
+
+async function boot() {
+  try {
+    // game_core.js는 emcc --MODULARIZE 빌드 산출물 (web/js/game_core.js)
+    const GameModuleFactory = (await import('./js/game_core.js')).default;
+    Module = await GameModuleFactory();
+
+    cGameInit       = Module.cwrap('game_init', null, []);
+    cGameMove       = Module.cwrap('game_move', 'number', ['number']);
+    cGameInspect    = Module.cwrap('game_inspect', 'number', []);
+    cGameTryLock    = Module.cwrap('game_try_lock', 'number', ['string']);
+    cGetRoom        = Module.cwrap('game_get_room', 'number', []);
+    cGetHasKey      = Module.cwrap('game_get_has_key', 'number', []);
+    cGetHasCodePaper= Module.cwrap('game_get_has_code_paper', 'number', []);
+    cGetLockOpened  = Module.cwrap('game_get_lock_opened', 'number', []);
+    cGetMoveCount   = Module.cwrap('game_get_move_count', 'number', []);
+
+    cGameInit();
+    bindEvents();
+    renderState();
+    appendLog('WASM 모듈을 불러왔습니다.', 'system');
+  } catch (err) {
+    appendLog('WASM 모듈을 불러오지 못했습니다. game_core.js 빌드가 필요합니다.', 'error');
+    console.error(err);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
