@@ -3,512 +3,378 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>서재의 방 — 탈출</title>
+<title>표류자들 — 협동 방탈출</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #14100D;
-    --panel: #1C1610;
-    --panel-edge: #2A2117;
-    --ink: #D9CBAA;
-    --ink-dim: #8B7F68;
+    --bg: #100D14;
+    --panel: #17131D;
+    --panel-edge: #241E2C;
+    --ink: #D8CFE0;
+    --ink-dim: #837A93;
+    --arcane: #7FB0C9;
+    --arcane-dim: #4C7488;
     --brass: #C9973B;
-    --brass-dim: #8A6A2C;
-    --danger: #7A2E2E;
-    --success: #5C7A4A;
+    --danger: #A24545;
+    --success: #5C8A6A;
   }
-
   * { box-sizing: border-box; }
-
   html, body {
-    margin: 0;
-    height: 100%;
-    background: var(--bg);
-    color: var(--ink);
+    margin: 0; min-height: 100%;
+    background: var(--bg); color: var(--ink);
     font-family: 'EB Garamond', serif;
-    overflow: hidden;
   }
-
-  /* 은은한 촛불 비네트 — 시그니처 분위기 연출용, 상호작용 없음 */
   body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(ellipse at 50% 40%, rgba(201,151,59,0.08), transparent 60%),
-                radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.7), transparent 50%);
-    z-index: 5;
-    animation: flicker 6s ease-in-out infinite;
-  }
-  @keyframes flicker {
-    0%, 100% { opacity: 1; }
-    45% { opacity: 0.92; }
-    50% { opacity: 1; }
-    72% { opacity: 0.96; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    body::before { animation: none; }
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5;
+    background: radial-gradient(ellipse at 50% 0%, rgba(127,176,201,0.09), transparent 55%),
+                radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.75), transparent 50%);
   }
 
-  .stage {
-    position: relative;
-    height: 100vh;
-    display: grid;
-    grid-template-columns: 1.6fr 1fr;
-    gap: 1px;
-    background: var(--panel-edge);
+  .wrap { max-width: 760px; margin: 0 auto; padding: 2.4rem 1.4rem 4rem; }
+
+  h1.title {
+    font-family: 'Cormorant Garamond', serif; font-weight: 700;
+    font-size: 2.2rem; color: var(--arcane); margin: 0 0 0.3rem;
+    letter-spacing: 0.02em;
+  }
+  .subtitle {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.15em; color: var(--ink-dim); text-transform: uppercase;
+    margin-bottom: 1.6rem;
   }
 
-  header.title-bar {
-    grid-column: 1 / -1;
-    padding: 1.1rem 1.6rem 0.9rem;
-    background: var(--bg);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--panel-edge);
+  .panel {
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    padding: 1.6rem; margin-bottom: 1.2rem;
   }
-  header.title-bar h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: 1.7rem;
-    letter-spacing: 0.04em;
-    margin: 0;
-    color: var(--brass);
-  }
-  header.title-bar .room-count {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--ink-dim);
-    letter-spacing: 0.08em;
-  }
-
-  /* ---------- 왼쪽: 방 뷰 ---------- */
-  .room-view {
-    background: var(--bg);
-    padding: 2rem 2.4rem;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-  }
-  .room-eyebrow {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
-    color: var(--brass-dim);
-    text-transform: uppercase;
-    margin-bottom: 0.4rem;
-  }
-  .room-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 700;
-    font-size: 2.4rem;
+  .panel h2 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-dim);
     margin: 0 0 1rem;
-    color: var(--ink);
-  }
-  .room-desc {
-    font-size: 1.15rem;
-    line-height: 1.75;
-    color: var(--ink);
-    max-width: 46ch;
-    font-style: italic;
-    color: #C4B692;
   }
 
-  .actions {
-    margin-top: auto;
-    padding-top: 1.6rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-  }
-  button.action-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--panel-edge);
-    padding: 0.65rem 1.1rem;
-    cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease;
-  }
-  button.action-btn:hover,
-  button.action-btn:focus-visible {
-    border-color: var(--brass);
-    color: var(--brass);
-    outline: none;
-  }
-  button.action-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
+  p.intro-line { font-style: italic; color: #C6B9D6; line-height: 1.8; margin: 0 0 0.6rem; }
 
-  /* ---------- 오른쪽: 사이드바 ---------- */
-  .sidebar {
-    background: var(--panel);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+  label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    color: var(--ink-dim); letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  input[type=text] {
+    width: 100%; background: var(--bg); border: 1px solid var(--panel-edge);
+    color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem;
+    padding: 0.65rem 0.8rem; letter-spacing: 0.05em; margin-bottom: 1rem;
   }
+  input[type=text]:focus-visible { outline: none; border-color: var(--arcane); }
+  input[type=text]::placeholder { color: var(--ink-dim); }
 
-  .lock-signature {
-    padding: 1.3rem 1.6rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    border-bottom: 1px solid var(--panel-edge);
+  .btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; letter-spacing: 0.04em;
+    background: var(--arcane-dim); color: #0D0F12; border: none;
+    padding: 0.7rem 1.2rem; cursor: pointer; width: 100%;
   }
-  .lock-signature svg {
-    width: 34px;
-    height: 34px;
-    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-origin: 70% 40%;
-  }
-  .lock-signature.open svg {
-    transform: rotate(28deg) translateY(-2px);
-  }
-  .lock-signature svg .shackle { transition: stroke 0.4s ease, opacity 0.4s ease; }
-  .lock-signature.open svg .shackle { opacity: 0; }
-  .lock-status {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    color: var(--ink-dim);
-    text-transform: uppercase;
-  }
-  .lock-signature.open .lock-status { color: var(--success); }
+  .btn:hover { background: var(--arcane); }
+  .btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--panel-edge); }
+  .btn.secondary:hover { border-color: var(--arcane); color: var(--arcane); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  .inventory {
-    padding: 1.1rem 1.6rem;
-    border-bottom: 1px solid var(--panel-edge);
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+  .tabs button {
+    flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+    background: transparent; border: 1px solid var(--panel-edge); color: var(--ink-dim);
+    padding: 0.6rem; cursor: pointer;
   }
-  .inventory h2 {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 0 0 0.7rem;
-  }
-  .item-list {
-    display: flex;
-    gap: 0.6rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    min-height: 2.4rem;
-  }
-  .item-list li {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--ink-dim);
-    border: 1px solid var(--panel-edge);
-    padding: 0.35rem 0.6rem;
-  }
-  .item-list li.held {
-    color: var(--brass);
-    border-color: var(--brass-dim);
-  }
-  .item-list .empty {
-    color: var(--ink-dim);
-    font-style: italic;
-    border: none;
-    padding: 0.35rem 0;
-  }
+  .tabs button.active { border-color: var(--arcane); color: var(--arcane); }
 
-  .log {
-    flex: 1;
-    padding: 1.1rem 1.6rem 0.4rem;
-    overflow-y: auto;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.82rem;
-    line-height: 1.7;
-    min-height: 0;
+  .room-code-display {
+    font-family: 'IBM Plex Mono', monospace; font-size: 1.8rem; letter-spacing: 0.3em;
+    color: var(--brass); text-align: center; padding: 0.8rem 0; user-select: all;
   }
-  .log h2 {
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 0 0 0.6rem;
+  .room-code-hint { text-align: center; font-size: 0.75rem; color: var(--ink-dim);
+    font-family: 'IBM Plex Mono', monospace; margin-bottom: 0.8rem; }
+
+  .player-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+  .player-chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--ink);
+    border: 1px solid var(--arcane-dim); padding: 0.3rem 0.7rem;
   }
-  .log-line { margin: 0 0 0.35rem; color: var(--ink-dim); }
+  .player-chip.me { color: var(--brass); border-color: var(--brass); }
+  .player-chip.empty { color: var(--ink-dim); border-color: var(--panel-edge); }
+
+  .stage-name { font-family: 'Cormorant Garamond', serif; font-weight: 700;
+    font-size: 1.6rem; color: var(--ink); margin: 0 0 0.6rem; }
+  .stage-flavor { line-height: 1.75; margin: 0 0 1.2rem; color: #C6B9D6; font-style: italic; }
+
+  .my-clue {
+    border-left: 3px solid var(--arcane); padding: 0.8rem 1rem;
+    background: rgba(127,176,201,0.06); margin-bottom: 1.3rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; line-height: 1.7;
+  }
+  .my-clue .role-tag { color: var(--arcane); display: block; margin-bottom: 0.3rem;
+    letter-spacing: 0.1em; font-size: 0.7rem; text-transform: uppercase; }
+
+  .answer-row { display: flex; gap: 0.5rem; }
+  .answer-row input { flex: 1; margin-bottom: 0; }
+  .answer-row .btn { width: auto; padding: 0 1.2rem; }
+
+  .log { max-height: 220px; overflow-y: auto; font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem; line-height: 1.7; }
+  .log-line { margin: 0 0 0.3rem; color: var(--ink-dim); }
   .log-line.system { color: var(--ink); }
   .log-line.success { color: var(--success); }
   .log-line.error { color: var(--danger); }
 
-  .lock-input-row {
-    padding: 0.9rem 1.6rem 1.4rem;
-    border-top: 1px solid var(--panel-edge);
-    display: flex;
-    gap: 0.5rem;
+  .ending {
+    text-align: center; padding: 2rem 1rem;
   }
-  .lock-input-row input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--panel-edge);
-    color: var(--ink);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.85rem;
-    padding: 0.6rem 0.7rem;
-    letter-spacing: 0.1em;
-  }
-  .lock-input-row input:focus-visible {
-    outline: none;
-    border-color: var(--brass);
-  }
-  .lock-input-row input::placeholder { color: var(--ink-dim); }
-  .lock-input-row button {
-    font-family: 'IBM Plex Mono', monospace;
-    background: var(--brass-dim);
-    color: var(--bg);
-    border: none;
-    padding: 0 1.1rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-  }
-  .lock-input-row button:hover { background: var(--brass); }
-  .lock-input-row button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .ending p { font-style: italic; color: #C6B9D6; line-height: 2; margin: 0.4rem 0; }
 
-  @media (max-width: 760px) {
-    .stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; overflow-y: auto; }
-    .room-view { min-height: 40vh; }
-  }
+  .error-msg { color: var(--danger); font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem; margin: -0.6rem 0 1rem; min-height: 1em; }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<div class="stage">
-  <header class="title-bar">
-    <h1>서재의 방</h1>
-    <span class="room-count" id="move-count">이동 0회</span>
-  </header>
+<div class="wrap">
+  <h1 class="title" id="story-title">표류자들</h1>
+  <div class="subtitle">4인 협동 방탈출</div>
 
-  <main class="room-view">
-    <div class="room-eyebrow" id="room-eyebrow">현재 위치</div>
-    <h2 class="room-name" id="room-name">입구</h2>
-    <p class="room-desc" id="room-desc">어두운 방. 북쪽으로 서재가 보인다.</p>
-
-    <div class="actions">
-      <button class="action-btn" id="btn-move-n">이동: 북쪽</button>
-      <button class="action-btn" id="btn-move-s">이동: 남쪽</button>
-      <button class="action-btn" id="btn-inspect">조사하기</button>
-    </div>
-  </main>
-
-  <aside class="sidebar">
-    <div class="lock-signature" id="lock-signature">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="shackle" d="M7 10V7a5 5 0 0 1 10 0v3" stroke="#C9973B" stroke-width="1.6" stroke-linecap="round"/>
-        <rect x="5" y="10" width="14" height="10" rx="1.5" fill="#C9973B"/>
-        <circle cx="12" cy="14.5" r="1.4" fill="#14100D"/>
-        <rect x="11.4" y="15.3" width="1.2" height="2.4" fill="#14100D"/>
-      </svg>
-      <span class="lock-status" id="lock-status">잠김</span>
+  <!-- ===== 화면 1: 시작 (방 만들기 / 참가) ===== -->
+  <div id="screen-landing">
+    <div class="panel">
+      <h2>이야기</h2>
+      <div id="intro-text"></div>
     </div>
 
-    <div class="inventory">
-      <h2>소지품</h2>
-      <ul class="item-list" id="item-list">
-        <li class="empty">비어 있음</li>
-      </ul>
+    <div class="panel">
+      <label for="player-name">당신의 이름</label>
+      <input type="text" id="player-name" placeholder="탐사대원 이름" maxlength="12">
+
+      <div class="tabs">
+        <button type="button" id="tab-create" class="active">방 만들기</button>
+        <button type="button" id="tab-join">코드로 참가</button>
+      </div>
+
+      <div id="join-code-row">
+        <label for="room-code-input">방 코드</label>
+        <input type="text" id="room-code-input" placeholder="예: 7XQK" maxlength="4" style="text-transform: uppercase;">
+      </div>
+
+      <div class="error-msg" id="landing-error"></div>
+      <button class="btn" id="btn-enter">시작하기</button>
+    </div>
+  </div>
+
+  <!-- ===== 화면 2: 게임 (로비 겸용 — 참가 즉시 스테이지 진행) ===== -->
+  <div id="screen-game" class="hidden">
+    <div class="panel">
+      <h2>탐사대</h2>
+      <div class="room-code-display" id="room-code-display">----</div>
+      <div class="room-code-hint">이 코드를 친구에게 공유해서 함께 참가하세요 (최대 4명)</div>
+      <div class="player-list" id="player-list"></div>
     </div>
 
-    <div class="log" id="log">
+    <div class="panel" id="stage-panel">
+      <h2 id="stage-eyebrow">현재 구역</h2>
+      <div class="stage-name" id="stage-name">—</div>
+      <p class="stage-flavor" id="stage-flavor"></p>
+
+      <div class="my-clue">
+        <span class="role-tag">당신만 보이는 단서 (역할 <span id="my-role">-</span>)</span>
+        <span id="my-clue-text">—</span>
+      </div>
+
+      <label for="answer-input" id="answer-hint">정답 입력</label>
+      <div class="answer-row">
+        <input type="text" id="answer-input" placeholder="다른 대원들과 상의해서 입력하세요" autocomplete="off">
+        <button class="btn" id="btn-submit">확인</button>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="ending-panel">
+      <div class="ending" id="ending-text"></div>
+    </div>
+
+    <div class="panel">
       <h2>기록</h2>
-      <p class="log-line system">게임을 불러왔습니다.</p>
+      <div class="log" id="log"></div>
     </div>
-
-    <form class="lock-input-row" id="lock-form">
-      <input
-        type="text"
-        id="lock-input"
-        placeholder="자물쇠 비밀번호 입력..."
-        maxlength="8"
-        autocomplete="off"
-      >
-      <button type="submit">확인</button>
-    </form>
-  </aside>
+  </div>
 </div>
 
-<script>
-/*
- * ============================================================
- * WASM 바인딩 — game_core.js (Emscripten 빌드 산출물) 로드 필요
- * ============================================================
- *
- * 중요: 이 스크립트는 이전 단계의 콘솔용 game_core.c(scanf/fgets 기반,
- * main() 안에서 블로킹 루프)가 아니라, 웹 호출에 맞게 "함수 분리"한
- * C API를 전제로 작성되었습니다. C 쪽에 아래 함수들을 노출해야 합니다:
- *
- *   void game_init(void);
- *   int  game_move(int direction);        // 0=성공, 1=이동 불가
- *   int  game_inspect(void);               // 0=아이템 없음, 1=획득함
- *   int  game_try_lock(const char* code);  // 0=오답, 1=정답
- *   int  game_get_room(void);
- *   int  game_get_has_key(void);
- *   int  game_get_has_code_paper(void);
- *   int  game_get_lock_opened(void);
- *   int  game_get_move_count(void);
- *
- * emcc EXPORTED_FUNCTIONS에 위 함수명을 '_' 접두사와 함께 추가하세요.
- * 아직 이 리팩터링을 진행하지 않았다면, 다음 단계에서 game_core.c를
- * 이 형태로 바꿔드릴 수 있습니다 — 지금은 UI/바인딩 구조에 집중했습니다.
- * ============================================================
- */
+<!-- Firebase compat SDK (multiplayer.js가 window.firebase를 사용) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-const ROOM_NAMES = {
-  0: { name: '입구', eyebrow: '현재 위치', desc: '어두운 방. 북쪽으로 서재가 보인다.' },
-  1: { name: '서재', eyebrow: '현재 위치', desc: '책장 사이에 무언가 떨어져 있다.' },
-  2: { name: '연구실', eyebrow: '현재 위치', desc: '자물쇠가 걸린 문이 있다.' },
-  3: { name: '출구', eyebrow: '현재 위치', desc: '마지막 문 앞에 섰다.' },
-};
-
-let Module = null;
-let cGameInit, cGameMove, cGameInspect, cGameTryLock;
-let cGetRoom, cGetHasKey, cGetHasCodePaper, cGetLockOpened, cGetMoveCount;
+<script type="module">
+import { firebaseConfig } from './js/firebase-config.js';
+import {
+  initFirebase, createRoom, joinRoom, listenToRoom, submitAnswer, getCurrentPlayerId
+} from './js/multiplayer.js';
+import { STORY_INTRO, STAGES, STAGE_ORDER, ENDING_TEXT } from './js/story-data.js';
 
 const els = {
-  roomName: document.getElementById('room-name'),
-  roomDesc: document.getElementById('room-desc'),
-  roomEyebrow: document.getElementById('room-eyebrow'),
-  moveCount: document.getElementById('move-count'),
-  itemList: document.getElementById('item-list'),
+  introText: document.getElementById('intro-text'),
+  storyTitle: document.getElementById('story-title'),
+  playerName: document.getElementById('player-name'),
+  tabCreate: document.getElementById('tab-create'),
+  tabJoin: document.getElementById('tab-join'),
+  joinCodeRow: document.getElementById('join-code-row'),
+  roomCodeInput: document.getElementById('room-code-input'),
+  landingError: document.getElementById('landing-error'),
+  btnEnter: document.getElementById('btn-enter'),
+  screenLanding: document.getElementById('screen-landing'),
+  screenGame: document.getElementById('screen-game'),
+  roomCodeDisplay: document.getElementById('room-code-display'),
+  playerList: document.getElementById('player-list'),
+  stagePanel: document.getElementById('stage-panel'),
+  stageEyebrow: document.getElementById('stage-eyebrow'),
+  stageName: document.getElementById('stage-name'),
+  stageFlavor: document.getElementById('stage-flavor'),
+  myRole: document.getElementById('my-role'),
+  myClueText: document.getElementById('my-clue-text'),
+  answerHint: document.getElementById('answer-hint'),
+  answerInput: document.getElementById('answer-input'),
+  btnSubmit: document.getElementById('btn-submit'),
+  endingPanel: document.getElementById('ending-panel'),
+  endingText: document.getElementById('ending-text'),
   log: document.getElementById('log'),
-  lockSignature: document.getElementById('lock-signature'),
-  lockStatus: document.getElementById('lock-status'),
-  btnN: document.getElementById('btn-move-n'),
-  btnS: document.getElementById('btn-move-s'),
-  btnInspect: document.getElementById('btn-inspect'),
-  lockForm: document.getElementById('lock-form'),
-  lockInput: document.getElementById('lock-input'),
 };
 
-function appendLog(text, type = '') {
-  const p = document.createElement('p');
-  p.className = 'log-line' + (type ? ' ' + type : '');
-  p.textContent = text;
-  els.log.appendChild(p);
+let mode = 'create';
+let myRole = null;
+let myName = '';
+let currentRoomData = null;
+
+els.storyTitle.textContent = STORY_INTRO.title;
+els.introText.innerHTML = STORY_INTRO.text.map(t => `<p class="intro-line">${t}</p>`).join('');
+
+els.tabCreate.addEventListener('click', () => setMode('create'));
+els.tabJoin.addEventListener('click', () => setMode('join'));
+
+function setMode(next) {
+  mode = next;
+  els.tabCreate.classList.toggle('active', mode === 'create');
+  els.tabJoin.classList.toggle('active', mode === 'join');
+  els.joinCodeRow.classList.toggle('hidden', mode !== 'join');
+  els.btnEnter.textContent = mode === 'create' ? '방 만들기' : '참가하기';
+}
+setMode('create');
+
+try {
+  initFirebase(firebaseConfig);
+} catch (err) {
+  els.landingError.textContent = err.message;
+  els.btnEnter.disabled = true;
+}
+
+els.btnEnter.addEventListener('click', async () => {
+  const name = els.playerName.value.trim();
+  if (!name) {
+    els.landingError.textContent = '이름을 입력해주세요.';
+    return;
+  }
+  els.landingError.textContent = '';
+  els.btnEnter.disabled = true;
+
+  try {
+    let result;
+    if (mode === 'create') {
+      result = await createRoom(name);
+    } else {
+      const code = els.roomCodeInput.value.trim().toUpperCase();
+      if (!code) throw new Error('방 코드를 입력해주세요.');
+      result = await joinRoom(code, name);
+    }
+    myRole = result.role;
+    myName = name;
+    enterGame(result.code);
+  } catch (err) {
+    els.landingError.textContent = err.message;
+  } finally {
+    els.btnEnter.disabled = false;
+  }
+});
+
+function enterGame(code) {
+  els.screenLanding.classList.add('hidden');
+  els.screenGame.classList.remove('hidden');
+  els.roomCodeDisplay.textContent = code;
+  listenToRoom(code, renderRoom);
+}
+
+function renderRoom(room) {
+  if (!room) return;
+  currentRoomData = room;
+  renderPlayers(room.players || {});
+  renderStage(room.stage);
+  renderLog(room.log || {});
+}
+
+function renderPlayers(players) {
+  const entries = Object.entries(players).sort((a, b) => a[1].role - b[1].role);
+  const myId = getCurrentPlayerId();
+  const slots = [1, 2, 3, 4].map(role => {
+    const found = entries.find(([, p]) => p.role === role);
+    if (!found) return `<span class="player-chip empty">역할 ${role}: 대기 중</span>`;
+    const [id, p] = found;
+    const mine = id === myId;
+    return `<span class="player-chip ${mine ? 'me' : ''}">역할 ${role}: ${p.name}${mine ? ' (나)' : ''}</span>`;
+  });
+  els.playerList.innerHTML = slots.join('');
+}
+
+function renderStage(stageId) {
+  if (stageId >= 4) {
+    els.stagePanel.classList.add('hidden');
+    els.endingPanel.classList.remove('hidden');
+    els.endingText.innerHTML = ENDING_TEXT.map(t => `<p>${t}</p>`).join('');
+    return;
+  }
+  els.stagePanel.classList.remove('hidden');
+  els.endingPanel.classList.add('hidden');
+
+  const stage = STAGES[stageId];
+  if (!stage) return;
+
+  els.stageEyebrow.textContent = `${STAGE_ORDER.indexOf(stageId) + 1} / ${STAGE_ORDER.length} 구역`;
+  els.stageName.textContent = stage.title;
+  els.stageFlavor.textContent = stage.flavor;
+  els.myRole.textContent = myRole ?? '-';
+  els.myClueText.textContent = myRole ? (stage.clues[myRole] ?? '단서 없음') : '단서 없음';
+  els.answerHint.textContent = stage.inputHint || '정답 입력';
+}
+
+function renderLog(logObj) {
+  const entries = Object.values(logObj).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  els.log.innerHTML = entries
+    .map(e => `<p class="log-line ${e.type || ''}">${escapeHtml(e.text)}</p>`)
+    .join('') || '<p class="log-line">아직 기록이 없다.</p>';
   els.log.scrollTop = els.log.scrollHeight;
 }
 
-function renderState() {
-  const room = cGetRoom();
-  const info = ROOM_NAMES[room] ?? { name: '알 수 없음', eyebrow: '', desc: '' };
-
-  els.roomName.textContent = info.name;
-  els.roomDesc.textContent = info.desc;
-  els.roomEyebrow.textContent = info.eyebrow;
-  els.moveCount.textContent = `이동 ${cGetMoveCount()}회`;
-
-  const hasKey = cGetHasKey();
-  const hasCode = cGetHasCodePaper();
-  const items = [];
-  if (hasKey) items.push('열쇠');
-  if (hasCode) items.push('낡은 종이');
-
-  els.itemList.innerHTML = items.length
-    ? items.map(i => `<li class="held">${i}</li>`).join('')
-    : '<li class="empty">비어 있음</li>';
-
-  const lockOpened = cGetLockOpened();
-  els.lockSignature.classList.toggle('open', !!lockOpened);
-  els.lockStatus.textContent = lockOpened ? '열림' : '잠김';
-
-  const canGoExit = room === 2 && lockOpened;
-  els.btnN.disabled = room === 3;
-  els.btnS.disabled = room === 0;
-  if (room === 2) {
-    els.btnN.textContent = canGoExit ? '이동: 출구로' : '이동: 출구 (잠김)';
-    els.btnN.disabled = !canGoExit;
-  } else {
-    els.btnN.textContent = '이동: 북쪽';
-  }
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
-function handleMove(direction) {
-  const result = cGameMove(direction);
-  if (result === 0) {
-    appendLog(`${direction > 0 ? '북쪽' : '남쪽'}으로 이동했습니다.`, 'system');
-  } else {
-    appendLog('그 방향으로는 갈 수 없습니다.', 'error');
-  }
-  renderState();
-  checkEnding();
-}
-
-function handleInspect() {
-  const result = cGameInspect();
-  if (result === 1) {
-    appendLog('무언가를 발견했다.', 'success');
-  } else {
-    appendLog('더 이상 조사할 것이 없다.', '');
-  }
-  renderState();
-}
-
-function handleLockSubmit(event) {
-  event.preventDefault();
-  const code = els.lockInput.value.trim();
-  if (!code) return;
-
-  const correct = cGameTryLock(code);
-  if (correct === 1) {
-    appendLog('찰칵! 자물쇠가 열렸다.', 'success');
-  } else {
-    appendLog('비밀번호가 틀렸다.', 'error');
-  }
-  els.lockInput.value = '';
-  renderState();
-}
-
-function checkEnding() {
-  if (cGetRoom() === 3 && cGetLockOpened()) {
-    appendLog(`=== 탈출 성공! 총 이동 ${cGetMoveCount()}회 ===`, 'success');
-    els.btnN.disabled = true;
-    els.btnS.disabled = true;
-    els.btnInspect.disabled = true;
-  }
-}
-
-function bindEvents() {
-  els.btnN.addEventListener('click', () => handleMove(1));
-  els.btnS.addEventListener('click', () => handleMove(-1));
-  els.btnInspect.addEventListener('click', handleInspect);
-  els.lockForm.addEventListener('submit', handleLockSubmit);
-}
-
-async function boot() {
+async function handleSubmit() {
+  const value = els.answerInput.value.trim();
+  if (!value || !currentRoomData) return;
+  els.btnSubmit.disabled = true;
   try {
-    // game_core.js는 emcc --MODULARIZE 빌드 산출물 (web/js/game_core.js)
-    const GameModuleFactory = (await import('./js/game_core.js')).default;
-    Module = await GameModuleFactory();
-
-    cGameInit       = Module.cwrap('game_init', null, []);
-    cGameMove       = Module.cwrap('game_move', 'number', ['number']);
-    cGameInspect    = Module.cwrap('game_inspect', 'number', []);
-    cGameTryLock    = Module.cwrap('game_try_lock', 'number', ['string']);
-    cGetRoom        = Module.cwrap('game_get_room', 'number', []);
-    cGetHasKey      = Module.cwrap('game_get_has_key', 'number', []);
-    cGetHasCodePaper= Module.cwrap('game_get_has_code_paper', 'number', []);
-    cGetLockOpened  = Module.cwrap('game_get_lock_opened', 'number', []);
-    cGetMoveCount   = Module.cwrap('game_get_move_count', 'number', []);
-
-    cGameInit();
-    bindEvents();
-    renderState();
-    appendLog('WASM 모듈을 불러왔습니다.', 'system');
-  } catch (err) {
-    appendLog('WASM 모듈을 불러오지 못했습니다. game_core.js 빌드가 필요합니다.', 'error');
-    console.error(err);
+    await submitAnswer(els.roomCodeDisplay.textContent, currentRoomData.stage, value, myName);
+    els.answerInput.value = '';
+  } finally {
+    els.btnSubmit.disabled = false;
   }
 }
 
-boot();
+els.btnSubmit.addEventListener('click', handleSubmit);
+els.answerInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleSubmit();
+});
 </script>
 </body>
 </html>

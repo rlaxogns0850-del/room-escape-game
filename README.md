@@ -1,75 +1,77 @@
-# C-Web Escape Game
+# 표류자들 — 4인 협동 방탈출
 
-C언어 코어 로직을 WebAssembly로 컴파일하여 웹 브라우저에서 실행하는 방탈출 게임입니다.
-웅보출판사 《프로그래밍》 교과서 학습 내용을 기반으로 실습을 확장하여 제작했습니다.
+Firebase Realtime Database로 실시간 동기화되는 4인 협동 웹 방탈출 게임입니다.
+웅보출판사 《프로그래밍》 교과서 학습 내용을 기반으로 C언어 콘솔 프로토타입에서 출발해,
+4명이 함께 접속해 서로 다른 단서를 맞춰가며 푸는 협동 게임으로 확장했습니다.
 
-## 현재 상태
+## 게임 방식
 
-- [x] C 콘솔 프로토타입 (`Player` 구조체, 방 이동/조사/자물쇠 로직)
-- [x] 웹 호출용 함수 분리 리팩터링 (`game_init`, `game_move`, `game_inspect`, `game_try_lock`, getter 함수들)
-- [x] HTML/CSS UI (방 뷰, 인벤토리, 로그, 자물쇠 입력창)
-- [x] JS ↔ WASM 바인딩 스크립트 (`cwrap` 기반)
-- [ ] **emcc 빌드 실행** — 로컬에 emsdk 설치 후 `./build.sh` 실행 필요 (이 저장소에는 `.wasm`/글루 JS 미포함)
+- 방을 만들면 4자리 코드가 생기고, 친구들이 그 코드로 참가 (최대 4명)
+- 참가 순서대로 역할 1~4이 자동 배정됨
+- **각 역할은 같은 스테이지에서 서로 다른 단서 조각만 봅니다.** 정답은 전원이 가진
+  조각을 말로 맞춰봐야 나오는 구조라, 목소리 통화나 같은 공간에서 함께 플레이하는 걸
+  전제로 설계했습니다.
+- 정답 입력창은 공용 — 누가 입력하든 전원 화면에 실시간 반영됩니다.
 
 ## 폴더 구조
 
 ```
 c-web-escape-game/
 ├── README.md
-├── build.sh              # emcc 빌드 스크립트
+├── build.sh                   # (선택) C 콘솔 프로토타입을 WASM으로 빌드하는 스크립트
 ├── src/
-│   └── game_core.c        # 게임 코어 로직 (WASM 익스포트 함수 포함)
+│   └── game_core.c             # C언어 콘솔 프로토타입 (교과서 실습용, 웹 게임과는 별도)
 └── web/
-    ├── index.html          # 게임 화면 (HTML/CSS/JS)
-    └── js/                 # build.sh 실행 후 game_core.js/.wasm 생성됨
+    ├── index.html               # 게임 화면 전체 (방 생성/참가/진행)
+    └── js/
+        ├── firebase-config.js    # 본인 Firebase 프로젝트 설정 (직접 채워야 함)
+        ├── story-data.js         # 스토리, 스테이지, 역할별 단서, 정답
+        └── multiplayer.js        # 방 생성/참가/실시간 동기화 로직
 ```
+
+> `src/game_core.c`는 교과서 실습(제어구조/함수/구조체) 결과물로 남겨둔 콘솔 버전이고,
+> 실제 플레이 가능한 게임은 `web/` 쪽의 멀티플레이어 버전입니다. 둘은 독립적으로 동작합니다.
+
+## 실행 전 준비: Firebase 프로젝트 설정 (최초 1회)
+
+1. [Firebase 콘솔](https://console.firebase.google.com)에서 새 프로젝트 생성
+2. 왼쪽 메뉴 **빌드 → Realtime Database** → **데이터베이스 만들기**
+   - 위치는 아무거나 선택
+   - 보안 규칙은 우선 **테스트 모드**로 시작 (30일 후 자동 잠김 — 계속 쓰려면 나중에 규칙 조정 필요)
+3. 프로젝트 설정(톱니바퀴 아이콘) → **일반** → **내 앱** → 웹 앱 추가(`</>` 아이콘)
+4. 나오는 `firebaseConfig` 객체 값을 `web/js/firebase-config.js`에 그대로 붙여넣기
+
+이 설정값은 Firebase 클라이언트 키라 공개 저장소에 커밋해도 괜찮습니다. 실제 보안은
+Realtime Database 규칙 쪽에서 관리합니다 (테스트 모드 기간이 끝나기 전에 규칙을
+한 번 더 검토하는 걸 권장해요).
 
 ## 로컬에서 실행하는 방법
 
-### 1) Emscripten 설치 (최초 1회)
-
-```bash
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh   # 새 터미널마다 재실행 필요
-```
-
-### 2) 빌드
-
-```bash
-cd c-web-escape-game
-chmod +x build.sh
-./build.sh
-```
-
-성공하면 `web/js/game_core.js`와 `web/js/game_core.wasm`이 생성됩니다.
-
-### 3) 로컬 서버로 실행
-
-WASM은 `file://`로 직접 열면 CORS 문제로 로드되지 않으므로 간단한 서버가 필요합니다.
+`index.html`은 ES 모듈(`import`)을 쓰기 때문에 `file://`로 직접 열면 브라우저가 막습니다.
+반드시 간단한 로컬 서버를 통해 열어야 합니다.
 
 ```bash
 cd web
 python3 -m http.server 8000
 ```
 
-브라우저에서 `http://localhost:8000` 접속.
+브라우저에서 `http://localhost:8000` 접속 → 이름 입력 → "방 만들기" → 나온 코드를
+다른 대원들에게 공유 → 각자 "코드로 참가"로 입장.
 
-## 게임 진행
+## 배포 (GitHub Pages)
 
-1. **입구**에서 조사 → 열쇠 획득
-2. 북쪽으로 이동 → **서재**에서 조사 → 비밀번호 단서(낡은 종이) 획득
-3. 북쪽으로 이동 → **연구실**에서 자물쇠 비밀번호 입력 (`1042`)
-4. 자물쇠가 열리면 **출구**로 이동 → 탈출 성공
+1. GitHub 저장소 → **Settings → Pages**
+2. **Source**: `Deploy from a branch`, 브랜치 `main`, 폴더는 `web` 선택
+   (GitHub Pages는 루트 또는 `/docs`만 지원하므로, `web` 폴더를 쓰려면
+   폴더명을 `docs`로 바꾸거나 GitHub Actions 워크플로를 사용하는 게 더 정확합니다)
+3. 배포되면 링크만 공유해도 4명이 각자 브라우저로 접속해 플레이 가능
 
 ## 다음 개발 계획
 
-- [ ] 방 개수 확장 및 퍼즐 다양화
-- [ ] 인벤토리 아이템 조합 로직
-- [ ] 엔딩 등급별 분기 연출
-- [ ] GitHub Pages 배포 (web/ 디렉토리 기준)
+- [ ] 스테이지 추가 및 단서 다양화
+- [ ] 오답 횟수 제한이나 힌트 시스템
+- [ ] 방 나가기 / 재접속 시 자동 복귀 처리 보강
+- [ ] Realtime Database 보안 규칙 정식 설정 (테스트 모드 만료 전)
 
 ## 라이선스
 
